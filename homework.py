@@ -35,10 +35,10 @@ def check_tokens() -> bool:
     for key in (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, ENDPOINT):
         if key is None:
             logging.critical(ex.GLOBAL_VARIABLE_IS_MISSING)
-            return False
+            sys.exit()
         if not key:
             logging.critical(ex.GLOBAL_VARIABLE_IS_EMPTY)
-            return False
+            sys.exit()
     return True
 
 
@@ -52,7 +52,7 @@ def send_message(bot: telegram.Bot, message: str) -> None:
             error=error,
             message=message,
         ))
-    logging.debug(f'Сообщение "{message}" отправлено.')
+    logging.debug(ex.MESSAGE_IS_SENT)
 
 
 def get_api_answer(current_timestamp: int) -> dict:
@@ -63,12 +63,14 @@ def get_api_answer(current_timestamp: int) -> dict:
     try:
         response = requests.get(**all_params)
     except requests.exceptions.RequestException as error:
+        logging.error(ex.CONNECTION_ERROR)
         raise telegram.TelegramError(ex.CONNECTION_ERROR.format(
             error=error,
             **all_params,
         ))
     response_status = response.status_code
     if response_status != 200:
+        logging.error(ex.WRONG_ENDPOINT)
         raise ex.EndpointError(ex.WRONG_ENDPOINT.format(
             response_status=response_status,
             **all_params,
@@ -76,6 +78,7 @@ def get_api_answer(current_timestamp: int) -> dict:
     try:
         return response.json()
     except Exception as error:
+        logging.error(ex.FORMAT_NOT_JSON.format(error))
         raise ex.ResponseFormatError(ex.FORMAT_NOT_JSON.format(error))
 
 
@@ -88,21 +91,25 @@ def check_response(response: dict) -> list:
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является dict')
     if 'homeworks' not in response or 'current_date' not in response:
+        logging.error('Нет ключа в ответе API')
         raise ex.EmptyResponseFromAPI('Нет ключа homeworks в ответе API')
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
+        logging.error('homeworks не является list')
         raise TypeError('homeworks не является list')
     return response['homeworks'][0]
 
 
 def parse_status(homework: dict) -> str:
     """Возвращает вердикт ревьюера."""
-    logging.info('Проводим проверки и извлекаем статус работы')
+    logging.info('Проверка статуса работы')
     if 'homework_name' not in homework:
+        logging.error('Нет ключа homework_name в ответе API')
         raise KeyError('Нет ключа homework_name в ответе API')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
+        logging.error(f'Неизвестный статус работы - {homework_status}')
         raise ValueError(f'Неизвестный статус работы - {homework_status}')
     return ('Изменился статус проверки работы "{homework_name}". {verdict}'
             ).format(homework_name=homework_name,
