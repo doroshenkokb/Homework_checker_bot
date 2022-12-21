@@ -28,10 +28,7 @@ HOMEWORK_VERDICTS = {
 
 
 def check_tokens() -> bool:
-    """
-    Проверяет доступность переменных окружения,
-    которые необходимы для работы программы.
-    """
+    """Проверяет доступность переменных окружения."""
     for key in (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, ENDPOINT):
         if key is None:
             logging.critical(ex.GLOBAL_VARIABLE_IS_MISSING)
