@@ -47,15 +47,15 @@ def check_tokens() -> bool:
 def send_message(bot: telegram.Bot, message: str) -> None:
     """Отправляет сообщение пользователю в Телегу."""
     try:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.info('Начало отправки сообщения')
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except Exception as error:
         logging.error(er.FAILURE_TO_SEND_MESSAGE)
         raise ex.MessageSendingError(er.FAILURE_TO_SEND_MESSAGE.format(
             error=error,
             message=message,
         ))
-    logging.debug(er.SUCCESS_SEND_MESSAGE)
+    logging.debug('Успешная отправка сообщения')
 
 
 def get_api_answer(current_timestamp: int) -> dict:
@@ -79,7 +79,6 @@ def get_api_answer(current_timestamp: int) -> dict:
     try:
         return response.json()
     except Exception as error:
-        logging.error(er.FORMAT_NOT_JSON.format(error))
         raise ex.ResponseFormatError(er.FORMAT_NOT_JSON.format(error))
 
 
@@ -101,7 +100,7 @@ def check_response(response: dict) -> list:
             'Статус проверки домашнего задания не обновлялся'
         )
         return homeworks
-    return homeworks[0]
+    return homeworks
 
 
 def parse_status(homework: dict) -> str:
@@ -121,28 +120,42 @@ def parse_status(homework: dict) -> str:
     return f'Изменился статус проверки работы "{homework_name}": {verdict}'
 
 
-def main():
+def main(): # noqa: max-complexity: 13
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit()
     current_timestamp = int(time.time())
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    error_message = ''
-    homework_status_message = ''
+    new_message = ''
+    hw_dict = {}
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            homework = check_response(response)
+            homeworks = check_response(response)
             current_timestamp = response.get('current_date', current_timestamp)
-            if homework:
-                status_homework = parse_status(homework)
-                if status_homework not in homework_status_message:
-                    homework_status_message = status_homework
-                    send_message(bot, homework_status_message)
+            num_works = len(homeworks)
+            if num_works > 0:
+                for homework in homeworks:
+                    name = homework.get('homework_name')
+                    status = homework.get('status')
+                    if name not in hw_dict.keys():
+                        hw_dict[name] = status
+                        message = parse_status(homework)
+                        send_message(bot, message)
+                        hw_dict = hw_dict
+                    else:
+                        if status != hw_dict[name]:
+                            hw_dict[name] = status
+                            message = parse_status(homework)
+                            send_message(bot, message)
+            time.sleep(RETRY_PERIOD)
+        except ex.MessageSendingError as error:
+            message = f'Сбой в работе программы: {error}'
+            logging.error(message, exc_info=True)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            if message not in error_message:
-                error_message = message
+            if message not in new_message:
+                new_message = message
                 logging.error(message, exc_info=True)
                 send_message(bot, message)
         finally:
@@ -156,7 +169,8 @@ if __name__ == '__main__':
             logging.FileHandler(
                 os.path.abspath(
                     'main.log'
-                ), mode='a',
+                ),
+                mode='a',
                 encoding='UTF-8'
             ),
             logging.StreamHandler(
