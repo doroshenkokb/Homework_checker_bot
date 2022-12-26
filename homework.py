@@ -8,7 +8,7 @@ import telegram
 from dotenv import load_dotenv
 
 import exceptions as ex
-import errorsmessage as er
+import message as msg
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ def check_tokens() -> bool:
         var_name for var_name, value in env_variables.items() if not value
     ]
     if no_value:
-        logging.critical(f'{er.GLOBAL_VARIABLE_IS_MISSING} {no_value}')
+        logging.critical(f'{msg.GLOBAL_VARIABLE_IS_MISSING} {no_value}')
         return False
     return True
 
@@ -50,12 +50,12 @@ def send_message(bot: telegram.Bot, message: str) -> None:
         logging.info('Начало отправки сообщения')
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except Exception as error:
-        logging.error(er.FAILURE_TO_SEND_MESSAGE)
-        raise ex.MessageSendingError(er.FAILURE_TO_SEND_MESSAGE.format(
+        logging.error(msg.FAILURE_TO_SEND_MESSAGE)
+        raise ex.MessageSendingError(msg.FAILURE_TO_SEND_MESSAGE.format(
             error=error,
             message=message,
         ))
-    logging.debug('Успешная отправка сообщения')
+    logging.debug(msg.SUCCESS_SEND_MESSAGE)
 
 
 def get_api_answer(current_timestamp: int) -> dict:
@@ -67,7 +67,7 @@ def get_api_answer(current_timestamp: int) -> dict:
         response = requests.get(**all_params)
         logging.info('Делаем запрос к единственному эндпоинту')
     except requests.exceptions.RequestException as error:
-        raise ex.ConnectionError(er.CONNECTION_ERROR.format(
+        raise ex.ConnectionError(msg.CONNECTION_ERROR.format(
             error=error,
             **all_params,
         ))
@@ -79,7 +79,7 @@ def get_api_answer(current_timestamp: int) -> dict:
     try:
         return response.json()
     except Exception as error:
-        raise ex.ResponseFormatError(er.FORMAT_NOT_JSON.format(error))
+        raise ex.ResponseFormatError(msg.FORMAT_NOT_JSON.format(error))
 
 
 def check_response(response: dict) -> list:
@@ -90,16 +90,11 @@ def check_response(response: dict) -> list:
     logging.info('Проверка ответа API на корректность')
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является dict')
-    elif 'homeworks' not in response or 'current_date' not in response:
+    if 'homeworks' not in response or 'current_date' not in response:
         raise ex.EmptyResponseFromAPI('Нет ключа homeworks в ответе API')
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         raise TypeError('homeworks не является list')
-    elif not homeworks:
-        logging.debug(
-            'Статус проверки домашнего задания не обновлялся'
-        )
-        return homeworks
     return homeworks
 
 
@@ -124,37 +119,31 @@ def main(): # noqa: max-complexity: 13
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit()
-    current_timestamp = int(time.time())
+    current_timestamp = int(time.time())-150000
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     new_message = ''
-    hw_dict = {}
+    homework_data = {}
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-            current_timestamp = response.get('current_date', current_timestamp)
-            num_works = len(homeworks)
-            if num_works > 0:
+            if homeworks:
                 for homework in homeworks:
                     name = homework.get('homework_name')
                     status = homework.get('status')
-                    if name not in hw_dict.keys():
-                        hw_dict[name] = status
-                        message = parse_status(homework)
+                    homework_data[name] = status
+                    message = parse_status(homework)
+                    if message != new_message:
+                        new_message = message
                         send_message(bot, message)
-                        hw_dict = hw_dict
-                    else:
-                        if status != hw_dict[name]:
-                            hw_dict[name] = status
-                            message = parse_status(homework)
-                            send_message(bot, message)
-            time.sleep(RETRY_PERIOD)
+                    if homework_data[name] == 'approved':
+                        del homework_data[name]
         except ex.MessageSendingError as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            if message not in new_message:
+            if message != new_message:
                 new_message = message
                 logging.error(message, exc_info=True)
                 send_message(bot, message)
@@ -166,13 +155,6 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
         handlers=[
-            logging.FileHandler(
-                os.path.abspath(
-                    'main.log'
-                ),
-                mode='a',
-                encoding='UTF-8'
-            ),
             logging.StreamHandler(
                 stream=sys.stdout
             )
