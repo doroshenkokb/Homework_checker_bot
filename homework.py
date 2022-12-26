@@ -119,7 +119,7 @@ def main(): # noqa: max-complexity: 13
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit()
-    current_timestamp = int(time.time())-150000
+    current_timestamp = int(time.time())
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     new_message = ''
     homework_data = {}
