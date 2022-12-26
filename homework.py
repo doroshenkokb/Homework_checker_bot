@@ -115,7 +115,7 @@ def parse_status(homework: dict) -> str:
     return f'Изменился статус проверки работы "{homework_name}": {verdict}'
 
 
-def main(): # noqa: max-complexity: 13
+def main():
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit()
