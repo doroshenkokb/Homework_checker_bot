@@ -122,22 +122,16 @@ def main(): # noqa: max-complexity: 13
     current_timestamp = int(time.time())
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     new_message = ''
-    homework_data = {}
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             if homeworks:
                 for homework in homeworks:
-                    name = homework.get('homework_name')
-                    status = homework.get('status')
-                    homework_data[name] = status
                     message = parse_status(homework)
                     if message != new_message:
                         new_message = message
                         send_message(bot, message)
-                    if homework_data[name] == 'approved':
-                        del homework_data[name]
         except ex.MessageSendingError as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
