@@ -11,8 +11,5 @@
 ```. venv/bin/activate (для linux)```
 - Установите зависимости из файла requirements.txt:   
 ```pip install -r requirements.txt```
-- создать файл с переменными окружения по примеру
-- запустить скрипт
-```python homework.py```
 - Запуск тестов
 ```pytest```
