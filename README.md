@@ -4,16 +4,16 @@
 
 #### Как запустить
 - клонировать репозиторий, перейти в директорию проекта
-'''git clone https://github.com/TroutBBBoy/homework_bot-1.git''
-'''cd homework_bot-1'''
+```git clone https://github.com/TroutBBBoy/homework_bot-1.git```
+```cd homework_bot-1```
 - создать виртуальное окружение и установить зависимости
-'''python -m venv venv'''
-'''. venv/Scripts/activate (для Windows)'''
-'''. venv/bin/activate (для linux)'''
+```python -m venv venv```
+```. venv/Scripts/activate (для Windows)```
+```. venv/bin/activate (для linux)```
 - Установите зависимости из файла requirements.txt:   
-'''pip install -r requirements.txt'''
+```pip install -r requirements.txt```
 - создать файл с переменными окружения по примеру
 - запустить скрипт
-'''python homework.py'''
+```python homework.py```
 - Запуск тестов
-'''pytest'''
+```pytest```
