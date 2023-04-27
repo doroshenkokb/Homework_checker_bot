@@ -5,7 +5,6 @@
 #### Как запустить
 - клонировать репозиторий, перейти в директорию проекта
 ```git clone https://github.com/TroutBBBoy/homework_bot-1.git```
-```cd homework_bot-1```
 - создать виртуальное окружение и установить зависимости
 ```python -m venv venv```
 ```. venv/Scripts/activate (для Windows)```
