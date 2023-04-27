@@ -1,16 +1,19 @@
+## Описание
+
 Телеграм-бот для проверки статуса домашнего задания на платформе Яндекс.Практикум. Опрашивает API Практикума каждые десять минут на предмет изменения статуса. Логирует и уведомляет в чате об ошибках возникающих в ходе работы. Деплой бота осуществлен на облачной платформе Heroku.
 
-Как запустить
-клонировать репозиторий, перейти в директорию проекта
-git clone https://github.com/TroutBBBoy/homework_bot-1.git
-cd homework_bot-1
-создать виртуальное окружение и установить зависимости
-python -m venv venv
-. venv/Scripts/activate (для Windows)
-. venv/bin/activate (для linux)
-pip install -r requirements.txt
-создать файл с переменными окружения по примеру
-запустить скрипт
-python homework.py
-Запуск тестов
-pytest
+#### Как запустить
+- клонировать репозиторий, перейти в директорию проекта
+'''git clone https://github.com/TroutBBBoy/homework_bot-1.git''
+'''cd homework_bot-1'''
+- создать виртуальное окружение и установить зависимости
+'''python -m venv venv'''
+'''. venv/Scripts/activate (для Windows)'''
+'''. venv/bin/activate (для linux)'''
+- Установите зависимости из файла requirements.txt:   
+'''pip install -r requirements.txt'''
+- создать файл с переменными окружения по примеру
+- запустить скрипт
+'''python homework.py'''
+- Запуск тестов
+'''pytest'''
